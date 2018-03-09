@@ -77,43 +77,53 @@ public class TPSIServer {
 
     static class AuthHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
-            String harcodedUser = "dawid";
+            String hardcodedUser = "dawid";
             String hardcodedPass = "password";
 
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             List<String> authHeader = null;
             if (exchange.getRequestHeaders().containsKey("Authorization")) {
-
                 authHeader = exchange.getRequestHeaders().get("Authorization");
-                byte[] decodedCredentials = Base64.getDecoder().decode(authHeader.get(1));
-                String[] stringCredentials = decodedCredentials.toString().split("\\:");
+                byte[] decodedCredentials = Base64.getDecoder().decode(authHeader.get(0).split(" ")[1].getBytes());
+                String[] stringCredentials = new String(decodedCredentials).split("\\:");
                 String requestUser = stringCredentials[0];
                 String requestPass = stringCredentials[1];
 
-                if (requestUser == harcodedUser && requestPass == hardcodedPass) {
+                if (requestUser.equals(hardcodedUser) && requestPass.equals(hardcodedPass)) {
                     exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
                     exchange.sendResponseHeaders(200, response.length);
                     OutputStream os = exchange.getResponseBody();
                     os.write(response);
                     os.close();
-                    return;
                 } else {
-                    exchange.sendResponseHeaders(401, -1);
+                    sendUnauthorizedResponse(exchange);
                 }
             } else {
-                exchange.sendResponseHeaders(401, -1);
+                sendUnauthorizedResponse(exchange);
             }
+        }
+
+        private void sendUnauthorizedResponse(HttpExchange exchange) throws IOException {
+            exchange.getResponseHeaders().set("WWW-Authenticate", "Basic");
+            String notAuthorized = "You are not authorized to access this site.";
+            exchange.sendResponseHeaders(401, notAuthorized.getBytes().length);
             OutputStream os = exchange.getResponseBody();
-            os.write(null);
+            os.write(notAuthorized.getBytes());
             os.close();
         }
     }
 
-    static class Auth2Handler implements HttpHandler {
+    static class Auth2Handler extends Authenticator {
+
+        public Result authenticate ( HttpExchange t) {
+
+        }
+
         public void handle(HttpExchange exchange) throws IOException {
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
             exchange.sendResponseHeaders(200, response.length);
+
             OutputStream os = exchange.getResponseBody();
             os.write(response);
         }
