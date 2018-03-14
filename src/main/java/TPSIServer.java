@@ -32,6 +32,10 @@ public class TPSIServer {
 
     static class RootHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            standardResponse(exchange);
+        }
+
+        private static void standardResponse(HttpExchange exchange) throws IOException {
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
             exchange.sendResponseHeaders(200, response.length);
@@ -85,7 +89,6 @@ public class TPSIServer {
         public void handle(HttpExchange exchange) throws IOException {
             String hardcodedUser = "dawid", hardcodedPass = "password";
 
-            byte[] response = Files.readAllBytes(Paths.get("index.html"));
             List<String> authHeader = null;
             if (exchange.getRequestHeaders().containsKey("Authorization")) {
                 authHeader = exchange.getRequestHeaders().get("Authorization");
@@ -95,11 +98,7 @@ public class TPSIServer {
                 String requestPass = stringCredentials[1];
 
                 if (requestUser.equals(hardcodedUser) && requestPass.equals(hardcodedPass)) {
-                    exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
-                    exchange.sendResponseHeaders(200, response.length);
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(response);
-                    os.close();
+                    RootHandler.standardResponse(exchange);
                 } else {
                     sendUnauthorizedResponse(exchange);
                 }
@@ -120,12 +119,12 @@ public class TPSIServer {
 
     static class Auth2Handler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
-            byte[] response = Files.readAllBytes(Paths.get("index.html"));
-            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
-            exchange.sendResponseHeaders(200, response.length);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response);
-            os.close();
+            standardResponse(exchange);
+            return;
+        }
+
+        private static void standardResponse(HttpExchange exchange) throws IOException {
+            RootHandler.standardResponse(exchange);
         }
     }
 
