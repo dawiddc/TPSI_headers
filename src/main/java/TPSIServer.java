@@ -10,7 +10,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
-public class TPSIServer {
+class TPSIServer {
     public static void main(String[] args) throws Exception {
         int port = 8000;
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -49,7 +49,7 @@ public class TPSIServer {
         public void handle(HttpExchange exchange) throws IOException {
             Headers headers = exchange.getRequestHeaders();
             String json = JsonWriter.objectToJson(headers);
-            String.format(json = JsonWriter.formatJson(json));
+            json = JsonWriter.formatJson(json);
 
             exchange.getResponseHeaders().set("Content-Type", "application/json;");
             exchange.sendResponseHeaders(200, json.length());
@@ -64,9 +64,6 @@ public class TPSIServer {
             exchange.getResponseHeaders().set("Location", "http://www.google.com");
             System.out.println("Redirecting...");
             exchange.sendResponseHeaders(301, 0);
-            OutputStream os = exchange.getResponseBody();
-            os.write(null);
-            os.close();
         }
     }
 
@@ -89,11 +86,11 @@ public class TPSIServer {
         public void handle(HttpExchange exchange) throws IOException {
             String hardcodedUser = "dawid", hardcodedPass = "password";
 
-            List<String> authHeader = null;
+            List<String> authHeader;
             if (exchange.getRequestHeaders().containsKey("Authorization")) {
                 authHeader = exchange.getRequestHeaders().get("Authorization");
                 byte[] decodedCredentials = Base64.getDecoder().decode(authHeader.get(0).split(" ")[1].getBytes());
-                String[] stringCredentials = new String(decodedCredentials).split("\\:");
+                String[] stringCredentials = new String(decodedCredentials).split(":");
                 String requestUser = stringCredentials[0];
                 String requestPass = stringCredentials[1];
 
@@ -120,7 +117,6 @@ public class TPSIServer {
     static class Auth2Handler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
             standardResponse(exchange);
-            return;
         }
 
         private static void standardResponse(HttpExchange exchange) throws IOException {
