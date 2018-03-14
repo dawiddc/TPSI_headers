@@ -62,6 +62,7 @@ public class TPSIServer {
     static class RedirectHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().set("Location", "http://www.google.com");
+            System.out.println("Redirecting...");
             exchange.sendResponseHeaders(301, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(null);
@@ -74,7 +75,6 @@ public class TPSIServer {
             /* Generate random cookie */
             UUID idOne = UUID.randomUUID();
             String id = String.valueOf(idOne);
-
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
             exchange.getResponseHeaders().set("Set-Cookie", "ID=" + id + "; Path=/; Domain=localhost");
