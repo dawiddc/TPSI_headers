@@ -19,7 +19,13 @@ public class TPSIServer {
         server.createContext("/redirect/", new RedirectHandler());
         server.createContext("/cookies/", new CookiesHandler());
         server.createContext("/auth/", new AuthHandler());
-        server.createContext("/auth2/", new Auth2Handler());
+        HttpContext authContext = server.createContext("/auth2/", new Auth2Handler());
+        authContext.setAuthenticator(new BasicAuthenticator("get") {
+            @Override
+            public boolean checkCredentials(String username, String password) {
+                return username.equals("dawid") && password.equals("password");
+            }
+        });
         System.out.println("Starting server on port: " + port);
         server.start();
     }
@@ -77,8 +83,7 @@ public class TPSIServer {
 
     static class AuthHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
-            String hardcodedUser = "dawid";
-            String hardcodedPass = "password";
+            String hardcodedUser = "dawid", hardcodedPass = "password";
 
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             List<String> authHeader = null;
@@ -113,19 +118,14 @@ public class TPSIServer {
         }
     }
 
-    static class Auth2Handler extends Authenticator {
-
-        public Result authenticate ( HttpExchange t) {
-
-        }
-
+    static class Auth2Handler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
             byte[] response = Files.readAllBytes(Paths.get("index.html"));
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
             exchange.sendResponseHeaders(200, response.length);
-
             OutputStream os = exchange.getResponseBody();
             os.write(response);
+            os.close();
         }
     }
 
