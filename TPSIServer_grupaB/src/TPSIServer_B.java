@@ -20,19 +20,21 @@ class TPSIServer_B {
             inputPath = args[0];
             if (!inputPath.isEmpty()) {
                 HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-                server.createContext("/", new RootHandler() {
-                    @Override
-                    public void handle(final HttpExchange exchange) {
-                        globalExchange = exchange;
-                        URI requestURI = exchange.getRequestURI();
-                        manageUserRequest(inputPath, requestURI);
-                    }
-                });
+                server.createContext("/", new RootHandler());
                 server.start();
                 System.out.println("Starting server on port: " + port);
             }
         } else {
             System.out.println("Please provide file path");
+        }
+    }
+
+
+    static class RootHandler implements HttpHandler {
+        public void handle(HttpExchange exchange) {
+            globalExchange = exchange;
+            URI requestURI = exchange.getRequestURI();
+            manageUserRequest(inputPath, requestURI);
         }
     }
 
@@ -106,10 +108,5 @@ class TPSIServer_B {
             e.printStackTrace();
         }
         return requestedFileBytes;
-    }
-
-    static class RootHandler implements HttpHandler {
-        public void handle(HttpExchange exchange) {
-        }
     }
 }
