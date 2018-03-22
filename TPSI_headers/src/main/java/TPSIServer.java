@@ -87,6 +87,7 @@ class TPSIServer {
             String hardcodedUser = "dawid", hardcodedPass = "password";
 
             List<String> authHeader;
+            try {
             if (exchange.getRequestHeaders().containsKey("Authorization")) {
                 authHeader = exchange.getRequestHeaders().get("Authorization");
                 byte[] decodedCredentials = Base64.getDecoder().decode(authHeader.get(0).split(" ")[1].getBytes());
@@ -102,7 +103,9 @@ class TPSIServer {
             } else {
                 sendUnauthorizedResponse(exchange);
             }
-        }
+        } catch(Exception e) {
+                sendUnauthorizedResponse(exchange);
+        }}
 
         private void sendUnauthorizedResponse(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().set("WWW-Authenticate", "Basic");
@@ -123,5 +126,4 @@ class TPSIServer {
             RootHandler.standardResponse(exchange);
         }
     }
-
 }
