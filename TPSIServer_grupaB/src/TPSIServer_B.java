@@ -43,7 +43,7 @@ class TPSIServer_B {
             /* For PTA test purposes */
 //            stringUri = "/../";
 
-            File requestedDirectory = new File(inputPath + stringUri);
+            File requestedDirectory = new File(inputPath + requestUri.getPath());
             requestedDirectory = requestedDirectory.getCanonicalFile();
             if (!requestedDirectory.toString().startsWith(inputPath)) {
                 response = "Access denied";
