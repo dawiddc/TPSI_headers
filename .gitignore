@@ -36,7 +36,5 @@
 ehthumbs.db
 Thumbs.db
 
-ProxyServerTPSI/.idea/vcs.xml
-ProxyServerTPSI/.idea/workspace.xml
-.idea/workspace.xml
-.idea/tasks.xml
+**/.idea/workspace.xml
+**/.idea/tasks.xml
