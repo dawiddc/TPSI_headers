@@ -27,7 +27,6 @@ class ProxyServer {
         server.start();
     }
 
-
     private static class RootHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange httpExchange) {
@@ -35,14 +34,14 @@ class ProxyServer {
             try {
                 connection = setupConnection(httpExchange);
                 byte[] requestBytes = readRequestBodyToByteArray(httpExchange.getRequestBody());
-                if (httpExchange.getRequestMethod().equals("POST")) {
+                /* write request body if not GET */
+                if (!httpExchange.getRequestMethod().equals("GET")) {
                     connection.setDoOutput(true);
                     OutputStream os = connection.getOutputStream();
                     os.write(requestBytes);
                     os.flush();
                     os.close();
                 }
-
                 passServerResponse(httpExchange, connection);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -69,8 +68,13 @@ class ProxyServer {
             connection.setRequestMethod(httpExchange.getRequestMethod());
             connection.setRequestProperty("Via", server.getAddress().getHostString());
             Headers requestHeaders = httpExchange.getRequestHeaders();
-            for (String key : requestHeaders.keySet()) {
-                connection.setRequestProperty(key, requestHeaders.get(key).get(0));
+            for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+                String headerKey = entry.getKey();
+                List<String> headerValues = entry.getValue();
+                for (String value : headerValues) {
+                    if (headerKey != null)
+                        connection.setRequestProperty(headerKey, value);
+                }
             }
             return connection;
         }
@@ -113,8 +117,6 @@ class ProxyServer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
         }
     }
 }
