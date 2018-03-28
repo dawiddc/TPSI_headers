@@ -12,7 +12,7 @@ import java.util.UUID;
 
 class TPSIServer {
     public static void main(String[] args) throws Exception {
-        int port = 8000;
+        int port = 8001;
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", new RootHandler());
         server.createContext("/echo/", new EchoHandler());
@@ -63,7 +63,7 @@ class TPSIServer {
         public void handle(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().set("Location", "http://www.google.com");
             System.out.println("Redirecting...");
-            exchange.sendResponseHeaders(301, 0);
+            exchange.sendResponseHeaders(301, -1);
         }
     }
 

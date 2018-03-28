@@ -105,7 +105,7 @@ class ProxyServer {
                 /* Pass headers */
                 Map<String, List<String>> serverHeaders = connection.getHeaderFields();
                 for (Map.Entry<String, List<String>> entry : serverHeaders.entrySet()) {
-                    if (entry.getKey() != null && !entry.getKey().equals("Transfer-Encoding"))
+                    if (entry.getKey() != null && !entry.getKey().equalsIgnoreCase("Transfer-Encoding"))
                         exchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
                 }
                 exchange.sendResponseHeaders(connection.getResponseCode(), response.length);

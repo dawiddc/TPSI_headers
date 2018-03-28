@@ -11,7 +11,7 @@ import java.net.URI;
 
 class TPSIServer_B {
 
-    private static final int port = 8000;
+    private static final int port = 8001;
     private static String inputPath = null;
     private static HttpExchange globalExchange;
 
@@ -82,17 +82,17 @@ class TPSIServer_B {
         if (stringUri.endsWith("/"))
             stringUri = stringUri.substring(0, stringUri.length() - 1);
         if (files == null || files.length == 0) {
-            return "<head></head><body><p>This directory is empty!</p><h><a href=\"http://localhost:8000" + stringUri.concat("/../") + "\">Go back!</a></h></body>";
+            return "<head></head><body><p>This directory is empty!</p><h><a href=\"http://localhost:" + port + stringUri.concat("/../") + "\">Go back!</a></h></body>";
         }
         for (File file : files) {
             if (file.isFile()) {
-                responseStringBuilder.append("<li>File: <a href=\"http://localhost:8000").append(stringUri).append("/").append(file.getName()).append("\">").append(file.getName()).append("</a></li>\n");
+                responseStringBuilder.append("<li>File: <a href=\"http://localhost:").append(port).append(stringUri).append("/").append(file.getName()).append("\">").append(file.getName()).append("</a></li>\n");
             } else if (file.isDirectory()) {
-                responseStringBuilder.append("<li>Directory: <a href=\"http://localhost:8000").append(stringUri).append("/").append(file.getName()).append("\">").append(file.getName()).append("</a></li>\n");
+                responseStringBuilder.append("<li>Directory: <a href=\"http://localhost:").append(port).append(stringUri).append("/").append(file.getName()).append("\">").append(file.getName()).append("</a></li>\n");
             }
         }
         if (requestedDirectory.getParent().startsWith(inputPath))
-            responseStringBuilder.append("<li><a href=\"http://localhost:8000").append(stringUri.concat("/../")).append("\">Go up!</a></li>");
+            responseStringBuilder.append("<li><a href=\"http://localhost:").append(port).append(stringUri.concat("/../")).append("\">Go up!</a></li>");
         responseStringBuilder.append("</ul></body>");
         return responseStringBuilder.toString();
     }
