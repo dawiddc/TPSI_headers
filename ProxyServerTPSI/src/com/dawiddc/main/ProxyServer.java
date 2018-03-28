@@ -6,19 +6,25 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public class ProxyServer {
+class ProxyServer {
     private static final int port = 8000;
     private static HttpServer server;
 
     public static void main(String[] args) throws Exception {
         server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", new RootHandler());
+        System.out.println("Starting server on port:" + port);
+        server.start();
     }
 
 
@@ -29,13 +35,19 @@ public class ProxyServer {
             try {
                 connection = setupConnection(httpExchange);
                 byte[] requestBytes = readRequestBodyToByteArray(httpExchange.getRequestBody());
-                OutputStream os = connection.getOutputStream();
-                os.write(requestBytes);
-                os.close();
+                if (httpExchange.getRequestMethod().equals("POST")) {
+                    connection.setDoOutput(true);
+                    OutputStream os = connection.getOutputStream();
+                    os.write(requestBytes);
+                    os.flush();
+                    os.close();
+                }
+
+                passServerResponse(httpExchange, connection);
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                connection.disconnect();
+                Objects.requireNonNull(connection).disconnect();
             }
         }
 
@@ -51,9 +63,8 @@ public class ProxyServer {
         }
 
         private HttpURLConnection setupConnection(HttpExchange httpExchange) throws Exception {
-            HttpURLConnection connection = null;
             URL url = httpExchange.getRequestURI().toURL();
-            connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(httpExchange.getRequestMethod());
             connection.setRequestProperty("Via", server.getAddress().getHostString());
@@ -62,6 +73,48 @@ public class ProxyServer {
                 connection.setRequestProperty(key, requestHeaders.get(key).get(0));
             }
             return connection;
+        }
+
+        private byte[] readAllBytes(InputStream is) {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+            try {
+                int nRead;
+                byte[] data = new byte[16384];
+
+                while ((nRead = is.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+
+                buffer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return buffer.toByteArray();
+        }
+
+        private void passServerResponse(HttpExchange exchange, HttpURLConnection connection) {
+            try {
+                InputStream is = connection.getInputStream();
+                byte[] response = readAllBytes(is);
+                /* Pass headers */
+                Map<String, List<String>> serverHeaders = connection.getHeaderFields();
+                for (Map.Entry<String, List<String>> entry : serverHeaders.entrySet()) {
+                    if (entry.getKey() != null && !entry.getKey().equals("Transfer-Encoding"))
+                        exchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
+                }
+                exchange.sendResponseHeaders(connection.getResponseCode(), response.length);
+                /* write server response to client */
+                OutputStream clientOs = exchange.getResponseBody();
+                clientOs.write(response);
+                clientOs.flush();
+                clientOs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 }
