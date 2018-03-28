@@ -99,16 +99,21 @@ class ProxyServer {
         }
 
         private void passServerResponse(HttpExchange exchange, HttpURLConnection connection) {
+            InputStream is;
+            byte[] response = null;
             try {
-                InputStream is = connection.getInputStream();
-                byte[] response = readAllBytes(is);
+                if (connection.getResponseCode() != 401) {
+                    is = connection.getInputStream();
+                    response = readAllBytes(is);
+                }
                 /* Pass headers */
                 Map<String, List<String>> serverHeaders = connection.getHeaderFields();
                 for (Map.Entry<String, List<String>> entry : serverHeaders.entrySet()) {
                     if (entry.getKey() != null && !entry.getKey().equalsIgnoreCase("Transfer-Encoding"))
                         exchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
                 }
-                exchange.sendResponseHeaders(connection.getResponseCode(), response.length);
+                long responseLength = ( response != null ) ? response.length : -1;
+                exchange.sendResponseHeaders(connection.getResponseCode(), responseLength);
                 /* write server response to client */
                 OutputStream clientOs = exchange.getResponseBody();
                 clientOs.write(response);
