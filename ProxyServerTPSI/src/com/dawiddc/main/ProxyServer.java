@@ -66,7 +66,8 @@ class ProxyServer {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(httpExchange.getRequestMethod());
-            connection.setRequestProperty("Via", server.getAddress().getHostString());
+            connection.setRequestProperty("Via", httpExchange.getLocalAddress().toString());
+            connection.setRequestProperty("X-Forwarded-For", httpExchange.getRemoteAddress().toString());
             Headers requestHeaders = httpExchange.getRequestHeaders();
             for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
                 String headerKey = entry.getKey();
@@ -112,6 +113,7 @@ class ProxyServer {
                     if (entry.getKey() != null && !entry.getKey().equalsIgnoreCase("Transfer-Encoding"))
                         exchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
                 }
+                exchange.getResponseHeaders().set("Via", exchange.getLocalAddress().toString());
                 long responseLength = ( response != null ) ? response.length : -1;
                 exchange.sendResponseHeaders(connection.getResponseCode(), responseLength);
                 /* write server response to client */
