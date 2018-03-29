@@ -37,7 +37,6 @@ class ProxyServer {
                     connection.setDoOutput(true);
                     OutputStream os = connection.getOutputStream();
                     os.write(requestBytes);
-                    os.flush();
                     os.close();
                 }
                 passServerResponse(httpExchange, connection);
@@ -120,7 +119,6 @@ class ProxyServer {
                 /* write server response to client */
                 OutputStream clientOs = exchange.getResponseBody();
                 clientOs.write(response);
-                clientOs.flush();
                 clientOs.close();
             } catch (Exception e) {
                 e.printStackTrace();
