@@ -30,7 +30,7 @@ class ProxyServer {
             HttpURLConnection connection = null;
             if (validateAddressAgainstBlackList(httpExchange))
                 try {
-                    Logger.logValues(1, 0, 0);
+                    Logger.logValues(httpExchange.getRequestURI().getHost(),1, 0, 0);
                     connection = setupConnection(httpExchange);
                     byte[] requestBytes = readRequestBodyToByteArray(httpExchange.getRequestBody());
                     /* write request body if not GET */
@@ -38,7 +38,7 @@ class ProxyServer {
                         connection.setDoOutput(true);
                         OutputStream os = connection.getOutputStream();
                         os.write(requestBytes);
-                        Logger.logValues(0, requestBytes.length, 0);
+                        Logger.logValues(httpExchange.getRequestURI().getHost(),0, requestBytes.length, 0);
                         os.close();
                     }
                     passServerResponse(httpExchange, connection);
@@ -121,7 +121,7 @@ class ProxyServer {
                 if (responseLength != -1) {
                     /* write server response to client */
                     OutputStream clientOs = httpExchange.getResponseBody();
-                    Logger.logValues(0, 0, response.length);
+                    Logger.logValues(httpExchange.getRequestURI().getHost(),0, 0, response.length);
                     clientOs.write(response);
                     clientOs.close();
                 }
