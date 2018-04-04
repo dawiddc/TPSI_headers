@@ -4,18 +4,21 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 class Blacklist {
 
-    ArrayList<String> blacklist = null;
+    private static List<String> blacklist = Collections.emptyList();
 
-    public ArrayList<String> getBlacklist() { return blacklist; }
+    static List<String> getBlacklist() { prepareBlacklist();
+    return blacklist; }
 
-    public void prepareBlacklist() {
-        try (FileInputStream inputStream = new FileInputStream("foo.txt")) {
-            String everything = IOUtils.toString(inputStream);
+    private static void prepareBlacklist() {
+        try (FileInputStream inputStream = new FileInputStream("src/main/resources/blacklist.txt")) {
+            String everything = IOUtils.toString(inputStream, "UTF-8");
             String[] hosts = everything.split("\\r?\\n");
-            blacklist = new ArrayList<String>(Arrays.asList(hosts));
+            blacklist = new ArrayList<>(Arrays.asList(hosts));
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }

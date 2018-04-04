@@ -16,10 +16,9 @@ import java.util.Objects;
 
 class ProxyServer {
     private static final int port = 8000;
-    private static HttpServer server;
 
     public static void main(String[] args) throws Exception {
-        server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", new RootHandler());
         System.out.println("Starting server on port:" + port);
         server.start();
@@ -29,22 +28,25 @@ class ProxyServer {
         @Override
         public void handle(HttpExchange httpExchange) {
             HttpURLConnection connection = null;
-            try {
-                connection = setupConnection(httpExchange);
-                byte[] requestBytes = readRequestBodyToByteArray(httpExchange.getRequestBody());
-                /* write request body if not GET */
-                if (!httpExchange.getRequestMethod().equals("GET")) {
-                    connection.setDoOutput(true);
-                    OutputStream os = connection.getOutputStream();
-                    os.write(requestBytes);
-                    os.close();
+            if (validateAddressAgainstBlackList(httpExchange))
+                try {
+                    Logger.logValues(1, 0, 0);
+                    connection = setupConnection(httpExchange);
+                    byte[] requestBytes = readRequestBodyToByteArray(httpExchange.getRequestBody());
+                    /* write request body if not GET */
+                    if (!httpExchange.getRequestMethod().equals("GET")) {
+                        connection.setDoOutput(true);
+                        OutputStream os = connection.getOutputStream();
+                        os.write(requestBytes);
+                        Logger.logValues(0, requestBytes.length, 0);
+                        os.close();
+                    }
+                    passServerResponse(httpExchange, connection);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    Objects.requireNonNull(connection).disconnect();
                 }
-                passServerResponse(httpExchange, connection);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                Objects.requireNonNull(connection).disconnect();
-            }
         }
 
         private byte[] readRequestBodyToByteArray(InputStream requestBody) throws Exception {
@@ -96,7 +98,7 @@ class ProxyServer {
             return buffer.toByteArray();
         }
 
-        private void passServerResponse(HttpExchange exchange, HttpURLConnection connection) {
+        private void passServerResponse(HttpExchange httpExchange, HttpURLConnection connection) {
             InputStream is;
             byte[] response = null;
             try {
@@ -111,18 +113,41 @@ class ProxyServer {
                 Map<String, List<String>> serverHeaders = connection.getHeaderFields();
                 for (Map.Entry<String, List<String>> entry : serverHeaders.entrySet()) {
                     if (entry.getKey() != null && !entry.getKey().equalsIgnoreCase("Transfer-Encoding"))
-                        exchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
+                        httpExchange.getResponseHeaders().set(entry.getKey(), entry.getValue().get(0));
                 }
-                exchange.getResponseHeaders().set("Via", exchange.getLocalAddress().toString());
+                httpExchange.getResponseHeaders().set("Via", httpExchange.getLocalAddress().toString());
                 long responseLength = (response != null) ? response.length : -1;
-                exchange.sendResponseHeaders(connection.getResponseCode(), responseLength);
-                /* write server response to client */
-                OutputStream clientOs = exchange.getResponseBody();
-                clientOs.write(response);
-                clientOs.close();
+                httpExchange.sendResponseHeaders(connection.getResponseCode(), responseLength);
+                if (responseLength != -1) {
+                    /* write server response to client */
+                    OutputStream clientOs = httpExchange.getResponseBody();
+                    Logger.logValues(0, 0, response.length);
+                    clientOs.write(response);
+                    clientOs.close();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        private boolean validateAddressAgainstBlackList(HttpExchange httpExchange) {
+            List<String> blackList = Blacklist.getBlacklist();
+            for (String address : blackList) {
+                if (httpExchange.getRequestURI().toString().startsWith(address)) {
+                    try {
+                        String blacklisted = "This site is blacklisted!";
+                        httpExchange.sendResponseHeaders(403, blacklisted.length());
+                        OutputStream clientOs = httpExchange.getResponseBody();
+                        clientOs.write(blacklisted.getBytes());
+                        clientOs.close();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
